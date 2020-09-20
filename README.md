@@ -30,13 +30,13 @@ FATFS
 
 ### OpenCV
 
-Opencv3.4.0
+Opencv4.2.0
 
 ### OpenCV
 
 Stm32CubeIDE
 
-VisualStudio 2015
+VisualStudio 2019
 
 ## License
 
