@@ -210,7 +210,7 @@ void Bin_100_frames(char* path)
 {
 	Mat SrcFrame, OutFrame;
 	Size dsize = Size(OUTPUT_HEIGHT, OUTPUT_WIDTH);
-	ofstream bin100_out("1000frames.bin", ios::binary);
+	ofstream bin100_out("full_frames.bin", ios::binary);
 
 	namedWindow("SourceVideo", WINDOW_AUTOSIZE);
 	namedWindow("OutVideo", WINDOW_AUTOSIZE);
@@ -241,10 +241,6 @@ void Bin_100_frames(char* path)
 		resize(SrcFrame, OutFrame, dsize);
 		imshow("OutVideo", OutFrame);
 		waitKey(delay);
-		if (frames++ == 1000)
-		{
-			break;
-		}
 
 		for (int i = 0; i < OutFrame.rows; i++)
 		{

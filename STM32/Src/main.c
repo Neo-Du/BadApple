@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "dma2d.h"
 #include "fatfs.h"
 #include "ltdc.h"
@@ -167,17 +168,28 @@ FRESULT open_files ()
     UINT dmy;
     FILINFO ino;
 
-    res = f_open (&SDFile, "1000frames.bin", FA_READ);
+    res = f_open (&SDFile, "full_frames.bin", FA_READ);
 
-    f_stat ("1000frames.bin", &ino);
+    f_stat ("full_frames.bin", &ino);
 
+    hltdc.Instance->SRCR |= 1;
     while (res == FR_OK && SDFile.fptr < ino.fsize)
     {
 	/* any other processes... */
 
 	/* Fill output stream periodicaly or on-demand */
+//	res = f_read (&SDFile, aMemory0, 640 * 480 * 2, &dmy);
+//	printf("time: %d\r\n",HAL_GetTick());
 	res = f_read (&SDFile, aMemory0, 640 * 480 * 2, &dmy);
-	printf("time: %d\r\n",HAL_GetTick());
+	HAL_Delay(10);
+	HAL_LTDC_SetAddress (&hltdc, &aMemory0, 1);
+	printf ("time: %d\r\n", HAL_GetTick ());
+
+	res = f_read (&SDFile, aMemory1, 640 * 480 * 2, &dmy);
+	HAL_Delay(10);
+	HAL_LTDC_SetAddress (&hltdc, &aMemory1, 1);
+	printf ("time: %d\r\n", HAL_GetTick ());
+
     }
     f_close (&SDFile);
 }
@@ -212,6 +224,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_FMC_Init();
   MX_LTDC_Init();
   MX_DMA2D_Init();
@@ -298,7 +311,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
-  PeriphClkInitStruct.PLLSAI.PLLSAIN = 60;
+  PeriphClkInitStruct.PLLSAI.PLLSAIN = 120;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
   PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)

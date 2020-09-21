@@ -76,7 +76,7 @@ void MX_LTDC_Init(void)
   pLayerCfg.ImageHeight = 480;
   pLayerCfg.Backcolor.Blue = 128;
   pLayerCfg.Backcolor.Green = 255;
-  pLayerCfg.Backcolor.Red = 0;
+  pLayerCfg.Backcolor.Red = 50;
   if (HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg, 0) != HAL_OK)
   {
     Error_Handler();
