@@ -1,0 +1,13 @@
+#STM32 CUBEIDE gitignore
+
+#Debug folder
+/**/Debug/*
+!/**/Debug/*.hex
+!/**/Debug/*.bin
+/.metadata/*
+/RemoteSystemsTempFiles/*
+.vscode/
+*.xml
+/.metadata/
+/.settings/
+*.launch
