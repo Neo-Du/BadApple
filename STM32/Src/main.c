@@ -73,7 +73,14 @@ uint8_t complate = 0;
 //uint32_t aMemory0[1200 * 800] __attribute__((section(".ExtRAMData"))); // 1024 * 1024 /4    //1MB / 4
 //uint32_t aMemory1[1200 * 800] __attribute__((section(".ExtRAMData"))); // 1024 * 1024 /4    //1MB / 4
 
-
+extern FATFS SDFatFS; /* File system object for SD logical drive */
+extern FIL SDFile; /* File object for SD */
+extern char SDPath[4];
+FRESULT res;
+uint8_t workBuffer[_MAX_SS];
+uint32_t byteswritten, bytesread; /* File write/read counts */
+uint8_t wtext[] = "This is STM32 working with FatFs SDIO_4bit"; /* File write buffer */
+uint8_t rtext[100]; /* File read buffer */
 
 /* USER CODE END PV */
 
@@ -85,7 +92,46 @@ void SystemClock_Config (void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+FRESULT scan_files (char*path) /* Start node to be scanned (also used as work area) */
+{
+    FRESULT res;
+    FILINFO fno;
+    DIR dir;
+    int i;
+    char *fn; /* This function is assuming non-Unicode cfg. */
+    res = f_opendir (&dir, path); /* Open the directory */
+    if (res == FR_OK)
+    {
+	i = strlen (path);
+	for (;;)
+	{
+	    res = f_readdir (&dir, &fno); /* Read a directory item */
+	    if (res != FR_OK)
+	    {
+		break; /* Break on error or end of dir */
+	    }
+	    else if (fno.fname[0] == 0)
+	    {
+		printf ("%s\r\n", path);
+		break;
+	    }
+	    fn = fno.fname;
+	    if (fno.fattrib & AM_DIR)
+	    { /* It is a directory */
+		sprintf (&path[i], "/%s", fn);
+		res = scan_files (path);
+		if (res != FR_OK)
+		    break;
+		path[i] = 0;
+	    }
+	    else
+	    { /* It is a file. */
+		printf ("%s/%s\r\n", path, fn);
+	    }
+	}
+    }
+    return res;
+}
 /* USER CODE END 0 */
 
 /**
@@ -126,6 +172,20 @@ int main (void)
     SDRAM_Init ();
 
     HAL_DMA2D_Start (&hdma2d, (uint32_t) &pic_array, SDRAM_BANK_ADDR, 640, 480);
+
+    printf ("Start\r\n");
+    /*##-2- Register the file system object to the FatFs module ##############*/
+    printf ("#2  %d\r\n", HAL_GetTick ());
+    if (f_mount (&SDFatFS, (TCHAR const*) SDPath, 0) != FR_OK)
+    {
+	/* FatFs Initialization Error */
+	Error_Handler ();
+    }
+    else
+    {
+	scan_files (SDPath);
+
+    }
     /* USER CODE END 2 */
 
     /* Infinite loop */
