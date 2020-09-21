@@ -112,12 +112,16 @@ int main (void)
     SDRAM_Init ();
 
     HAL_DMA2D_Start (&hdma2d, (uint32_t) &pic_array, SDRAM_BANK_ADDR, 640, 480);
-    while (1);
+    /* USER CODE END 2 */
 
-    /* USER CODE END WHILE */
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
+    while (1)
+    {
+	/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
-//    }
+	/* USER CODE BEGIN 3 */
+    }
     /* USER CODE END 3 */
 }
 
@@ -127,12 +131,9 @@ int main (void)
  */
 void SystemClock_Config (void)
 {
-    RCC_OscInitTypeDef RCC_OscInitStruct =
-	{ 0 };
-    RCC_ClkInitTypeDef RCC_ClkInitStruct =
-	{ 0 };
-    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct =
-	{ 0 };
+    RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = { 0 };
 
     /** Configure the main internal regulator output voltage
      */
