@@ -62,10 +62,10 @@ void MX_LTDC_Init(void)
   {
     Error_Handler();
   }
-  pLayerCfg.WindowX0 = 0;
-  pLayerCfg.WindowX1 = 639;
-  pLayerCfg.WindowY0 = 0;
-  pLayerCfg.WindowY1 = 479;
+  pLayerCfg.WindowX0 = 192;
+  pLayerCfg.WindowX1 = 831;
+  pLayerCfg.WindowY0 = 60;
+  pLayerCfg.WindowY1 = 539;
   pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
   pLayerCfg.Alpha = 255;
   pLayerCfg.Alpha0 = 0;
@@ -74,8 +74,8 @@ void MX_LTDC_Init(void)
   pLayerCfg.FBStartAdress = 0xc0000000;
   pLayerCfg.ImageWidth = 640;
   pLayerCfg.ImageHeight = 480;
-  pLayerCfg.Backcolor.Blue = 0;
-  pLayerCfg.Backcolor.Green = 0;
+  pLayerCfg.Backcolor.Blue = 128;
+  pLayerCfg.Backcolor.Green = 255;
   pLayerCfg.Backcolor.Red = 0;
   if (HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg, 0) != HAL_OK)
   {

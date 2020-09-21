@@ -67,6 +67,7 @@ MEMORY
     FLASH	(rx)	: ORIGIN = 0x8000000,	LENGTH = 1024K
 	
 	MEMORY_ARRAY (xrw)  : ORIGIN = 0xC0000000, LENGTH = 2M
+	MEMORY_ARRAY1 (xrw)  : ORIGIN = 0xC0200000, LENGTH = 2M
 	
 }
 
@@ -204,4 +205,5 @@ SECTIONS
   .ARM.attributes 0 : { *(.ARM.attributes) }
   
   .ExtRAMData(NOLOAD)  : {*(.ExtRAMData)} > MEMORY_ARRAY 
+  .ExtRAMData1(NOLOAD)  : {*(.ExtRAMData)} > MEMORY_ARRAY1
 }

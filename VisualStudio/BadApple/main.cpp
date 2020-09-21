@@ -25,6 +25,7 @@ VideoCapture srcVideo = NULL;
 ofstream outFile("out.bin", ios::out | ios::binary);
 Mat testPic2 = imread("tset.jpg");
 Mat testPic;
+
 void Bin_output(char* path)
 {
 	ofstream bin_out("out3.bin", ios::binary);
@@ -50,13 +51,12 @@ void Bin_output(char* path)
 			
 			d1 = (uint8_t)n;
 			d2 = n >> 8;
-			bin_out.write((char*)&d2, sizeof(d2));
 			bin_out.write((char*)&d1, sizeof(d1));
+			bin_out.write((char*)&d2, sizeof(d2));
 		}
 	}
 	bin_out.close();
 }
-
 void Bin_output_2pic(char* path, char* path2)
 {
 	ofstream bin_out("out4_2pic.bin", ios::binary);
@@ -179,7 +179,6 @@ void play_video(char* path)
 		waitKey(delay);
 	}
 }
-
 void test_bin_file()
 {
 	uint8_t d1, d2;
@@ -207,16 +206,75 @@ void test_bin_file()
 	test_bin_file.write((char*)&d1, sizeof(d1));
 	test_bin_file.close();
 }
+void Bin_100_frames(char* path)
+{
+	Mat SrcFrame, OutFrame;
+	Size dsize = Size(OUTPUT_HEIGHT, OUTPUT_WIDTH);
+	ofstream bin100_out("1000frames.bin", ios::binary);
 
+	namedWindow("SourceVideo", WINDOW_AUTOSIZE);
+	namedWindow("OutVideo", WINDOW_AUTOSIZE);
+	srcVideo = VideoCapture(path);
+	if (!srcVideo.isOpened())
+	{
+		cout << "Error, can not open file" << endl;
+	}
+	cout << "Source video Width=" << srcVideo.get(CAP_PROP_FRAME_WIDTH)
+		<< "  Height=" << srcVideo.get(CAP_PROP_FRAME_HEIGHT)
+		<< " FPS : " << srcVideo.get(CAP_PROP_FPS)
+		<< endl;
+
+	int delay = 1000 / srcVideo.get(CAP_PROP_FPS);
+	int frames = 0;
+	int b, g, r;
+	uint8_t d1, d2;
+	uint16_t n;
+
+	for (;;)
+	{
+		srcVideo >> SrcFrame;
+		if (SrcFrame.empty())
+		{
+			break;
+		}
+		imshow("SourceVideo", SrcFrame);
+		resize(SrcFrame, OutFrame, dsize);
+		imshow("OutVideo", OutFrame);
+		waitKey(delay);
+		if (frames++ == 1000)
+		{
+			break;
+		}
+
+		for (int i = 0; i < OutFrame.rows; i++)
+		{
+			for (int j = 0; j < OutFrame.cols; j++)
+			{
+				b = OutFrame.at<Vec3b>(i, j)[0] >> 3;
+				g = OutFrame.at<Vec3b>(i, j)[1] >> 2;
+				r = OutFrame.at<Vec3b>(i, j)[2] >> 3;
+				n = b << 11 | g << 5 | r;
+
+				d1 = (uint8_t)n;
+				d2 = n >> 8;
+				bin100_out.write((char*)&d1, sizeof(d1));
+				bin100_out.write((char*)&d2, sizeof(d2));
+			}
+		}
+
+	}
+	bin100_out.close();
+}
 int main()
 {
-	//play_video(srcFile);
+	//play_video(video_path);
 	//pic_to_array(test_pic_path);
 	//Bin_output(test_pic2_path);
-
 	//Bin_output_2pic(test_pic_path,test_pic2_path);
+	//test_bin_file();
 
-	test_bin_file();
+	Bin_100_frames(video_path);
+
 	cout << "done" << endl;
 	while (1);
 	waitKey(0);
