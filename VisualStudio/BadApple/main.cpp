@@ -146,7 +146,6 @@ void pic_to_array(char* path)
 	p2a << endl << "};" << endl;
 	p2a.close();
 }
-
 void play_video(char* path)
 {
 	Mat SrcFrame, OutFrame;
@@ -181,13 +180,43 @@ void play_video(char* path)
 	}
 }
 
+void test_bin_file()
+{
+	uint8_t d1, d2;
+	uint16_t n;
+	ofstream test_bin_file("test_bin_file.bin", ios::binary);
+	n = 0x001F;
+	d1 = (uint8_t)n;
+	d2 = n >> 8;
+	test_bin_file.write((char*)&d2, sizeof(d2));
+	test_bin_file.write((char*)&d1, sizeof(d1));
+	n = 0xf800;
+	d1 = (uint8_t)n;
+	d2 = n >> 8;
+	test_bin_file.write((char*)&d2, sizeof(d2));
+	test_bin_file.write((char*)&d1, sizeof(d1));
+	n = 0x07E0;
+	d1 = (uint8_t)n;
+	d2 = n >> 8;
+	test_bin_file.write((char*)&d2, sizeof(d2));
+	test_bin_file.write((char*)&d1, sizeof(d1));
+	n = 0xF81F;
+	d1 = (uint8_t)n;
+	d2 = n >> 8;
+	test_bin_file.write((char*)&d2, sizeof(d2));
+	test_bin_file.write((char*)&d1, sizeof(d1));
+	test_bin_file.close();
+}
+
 int main()
 {
 	//play_video(srcFile);
 	//pic_to_array(test_pic_path);
-	//Bin_output(test_pic_path);
+	//Bin_output(test_pic2_path);
 
-	Bin_output_2pic(test_pic_path,test_pic2_path);
+	//Bin_output_2pic(test_pic_path,test_pic2_path);
+
+	test_bin_file();
 	cout << "done" << endl;
 	while (1);
 	waitKey(0);

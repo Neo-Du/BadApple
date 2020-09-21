@@ -70,7 +70,7 @@ extern LTDC_HandleTypeDef hltdc;
 
 uint8_t complate = 0;
 //uint32_t aMemory[262144] __attribute__((section(".ExtRAMData")));
-//uint32_t aMemory0[1200 * 800] __attribute__((section(".ExtRAMData"))); // 1024 * 1024 /4    //1MB / 4
+uint16_t aMemory0[1200 * 800] __attribute__((section(".ExtRAMData"))); // 1024 * 1024 /4    //1MB / 4
 //uint32_t aMemory1[1200 * 800] __attribute__((section(".ExtRAMData"))); // 1024 * 1024 /4    //1MB / 4
 
 extern FATFS SDFatFS; /* File system object for SD logical drive */
@@ -80,7 +80,7 @@ FRESULT res;
 uint8_t workBuffer[_MAX_SS];
 uint32_t byteswritten, bytesread; /* File write/read counts */
 uint8_t wtext[] = "This is STM32 working with FatFs SDIO_4bit"; /* File write buffer */
-uint8_t rtext[100]; /* File read buffer */
+uint16_t rtext[640 * 120]; /* File read buffer */
 
 /* USER CODE END PV */
 
@@ -132,6 +132,55 @@ FRESULT scan_files (char*path) /* Start node to be scanned (also used as work ar
     }
     return res;
 }
+
+void LCD_test ()
+{
+    //HAL_DMA2D_Start (&hdma2d, (uint32_t) &pic_array, SDRAM_BANK_ADDR, 640, 480);
+
+    int16_t a = 0xf800; //RED
+    int16_t b = 0x07E0; //Green
+    int16_t c = 0x001F; //Blue
+    int16_t d = 0xF81F; //R+B
+
+    int32_t t = 0;
+
+    for (t = 0; t < 640 * 120; t++)
+    {
+	aMemory0[t] = a;
+    }
+    for (; t < 640 * 240; t++)
+    {
+	aMemory0[t] = b;
+    }
+    for (; t < 640 * 360; t++)
+    {
+	aMemory0[t] = c;
+    }
+    for (; t < 640 * 480; t++)
+    {
+	aMemory0[t] = d;
+    }
+}
+FRESULT open_files ()
+{
+    FRESULT res;
+    UINT dmy;
+    FILINFO ino;
+
+    res = f_open (&SDFile, "test2.bin", FA_READ);
+
+    f_stat ("test2.bin", &ino);
+
+    while (res == FR_OK && SDFile.fptr < ino.fsize)
+    {
+	/* any other processes... */
+
+	/* Fill output stream periodicaly or on-demand */
+	res = f_read (&SDFile, aMemory0, 640 * 480 * 2, &dmy);
+    }
+    f_close (&SDFile);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -171,8 +220,6 @@ int main (void)
     /* USER CODE BEGIN 2 */
     SDRAM_Init ();
 
-    HAL_DMA2D_Start (&hdma2d, (uint32_t) &pic_array, SDRAM_BANK_ADDR, 640, 480);
-
     printf ("Start\r\n");
     /*##-2- Register the file system object to the FatFs module ##############*/
     printf ("#2  %d\r\n", HAL_GetTick ());
@@ -183,7 +230,8 @@ int main (void)
     }
     else
     {
-	scan_files (SDPath);
+//	scan_files (SDPath);
+	open_files ();
 
     }
     /* USER CODE END 2 */
@@ -269,7 +317,7 @@ void Error_Handler (void)
 {
     /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
-
+    printf ("Error\r\n");
     /* USER CODE END Error_Handler_Debug */
 }
 
