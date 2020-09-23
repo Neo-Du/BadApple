@@ -181,12 +181,10 @@ FRESULT open_files ()
 //	res = f_read (&SDFile, aMemory0, 640 * 480 * 2, &dmy);
 //	printf("time: %d\r\n",HAL_GetTick());
 	res = f_read (&SDFile, aMemory0, 640 * 480 * 2, &dmy);
-	HAL_Delay(10);
 	HAL_LTDC_SetAddress (&hltdc, &aMemory0, 1);
 	printf ("time: %d\r\n", HAL_GetTick ());
 
 	res = f_read (&SDFile, aMemory1, 640 * 480 * 2, &dmy);
-	HAL_Delay(10);
 	HAL_LTDC_SetAddress (&hltdc, &aMemory1, 1);
 	printf ("time: %d\r\n", HAL_GetTick ());
 
