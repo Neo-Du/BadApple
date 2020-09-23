@@ -87,6 +87,7 @@ uint16_t rtext[640 * 120]; /* File read buffer */
 uint8_t buf0_ready = 0;
 uint8_t buf1_ready = 0;
 volatile uint8_t line_start = 0;
+volatile uint8_t dma_cplt = 0;
 
 /* USER CODE END PV */
 
@@ -167,6 +168,11 @@ void LCD_test ()
 	aMemory0[t] = d;
     }
 }
+void DMA2D_cplt (struct __DMA2D_HandleTypeDef*hdma2d)
+{
+    dma_cplt = 1;
+}
+
 FRESULT open_files ()
 {
     FRESULT res;
@@ -177,22 +183,24 @@ FRESULT open_files ()
 
     f_stat ("full_frames.bin", &ino);
 
+    hdma2d.XferCpltCallback = DMA2D_cplt;
+    HAL_LTDC_ProgramLineEvent (&hltdc, 0);
+
     while (res == FR_OK && SDFile.fptr < ino.fsize)
     {
 	/* any other processes... */
 	/* Fill output stream periodicaly or on-demand */
+
 	res = f_read (&SDFile, aMemory1, 640 * 480 * 2, &dmy);
-	HAL_LTDC_ProgramLineEvent (&hltdc, 0);
+
 	while (line_start != 1);
 	if (HAL_DMA2D_Start_IT (&hdma2d, aMemory1, aMemory0, 640, 480) != HAL_OK)
 	{
 	    Error_Handler ();
 	}
-	__HAL_LTDC_DISABLE_IT(&hltdc, LTDC_IT_LI);
+	while (dma_cplt != 1);
+	dma_cplt = 0;
 	line_start = 0;
-	HAL_Delay (10);
-	printf ("%d\r\n",HAL_GetTick());
-
     }
     f_close (&SDFile);
 }
@@ -320,9 +328,9 @@ void SystemClock_Config (void)
 	Error_Handler ();
     }
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
-    PeriphClkInitStruct.PLLSAI.PLLSAIN = 60;
+    PeriphClkInitStruct.PLLSAI.PLLSAIN = 216;
     PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
-    PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
+    PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_4;
     if (HAL_RCCEx_PeriphCLKConfig (&PeriphClkInitStruct) != HAL_OK)
     {
 	Error_Handler ();
