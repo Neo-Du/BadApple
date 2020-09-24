@@ -62,9 +62,9 @@ void MX_LTDC_Init(void)
   {
     Error_Handler();
   }
-  pLayerCfg.WindowX0 = 192;
-  pLayerCfg.WindowX1 = 831;
-  pLayerCfg.WindowY0 = 60;
+  pLayerCfg.WindowX0 = 190;
+  pLayerCfg.WindowX1 = 829;
+  pLayerCfg.WindowY0 = 59;
   pLayerCfg.WindowY1 = 539;
   pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
   pLayerCfg.Alpha = 255;

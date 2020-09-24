@@ -48,7 +48,7 @@ void Bin_output(char* path)
 			g = outImage.at<Vec3b>(i, j)[1] >> 2;
 			r = outImage.at<Vec3b>(i, j)[2] >> 3;
 			n = b << 11 | g << 5 | r;
-			
+
 			d1 = (uint8_t)n;
 			d2 = n >> 8;
 			bin_out.write((char*)&d1, sizeof(d1));
@@ -62,13 +62,13 @@ void Bin_output_2pic(char* path, char* path2)
 	ofstream bin_out("out4_2pic.bin", ios::binary);
 	int b, g, r, total;
 	total = 0;
-	Mat srcImage,srcImage2, outImage, outImage2;
+	Mat srcImage, srcImage2, outImage, outImage2;
 	Size dsize = Size(OUTPUT_HEIGHT, OUTPUT_WIDTH);
 	uint8_t d1, d2;
 	uint16_t n;
 	srcImage = imread(path);
 	srcImage2 = imread(path2);
-	
+
 	resize(srcImage, outImage, dsize);
 	resize(srcImage2, outImage2, dsize);
 
@@ -77,7 +77,7 @@ void Bin_output_2pic(char* path, char* path2)
 	imshow("outImage", outImage);
 	imshow("outImage", outImage2);
 
-	
+
 	for (int i = 0; i < outImage.rows; i++)
 	{
 		for (int j = 0; j < outImage.cols; j++)
@@ -210,7 +210,7 @@ void Bin_100_frames(char* path)
 {
 	Mat SrcFrame, OutFrame;
 	Size dsize = Size(OUTPUT_HEIGHT, OUTPUT_WIDTH);
-	ofstream bin100_out("full_frames.bin", ios::binary);
+	ofstream bin100_out("badapple_15_fps.bin", ios::binary);
 
 	namedWindow("SourceVideo", WINDOW_AUTOSIZE);
 	namedWindow("OutVideo", WINDOW_AUTOSIZE);
@@ -233,31 +233,35 @@ void Bin_100_frames(char* path)
 	for (;;)
 	{
 		srcVideo >> SrcFrame;
-		if (SrcFrame.empty())
-		{
-			break;
-		}
-		imshow("SourceVideo", SrcFrame);
-		resize(SrcFrame, OutFrame, dsize);
-		imshow("OutVideo", OutFrame);
-		waitKey(delay);
-
-		for (int i = 0; i < OutFrame.rows; i++)
-		{
-			for (int j = 0; j < OutFrame.cols; j++)
+		if (frames % 2 != 0 && frames > 35)
+		{			
+			if (SrcFrame.empty())
 			{
-				b = OutFrame.at<Vec3b>(i, j)[0] >> 3;
-				g = OutFrame.at<Vec3b>(i, j)[1] >> 2;
-				r = OutFrame.at<Vec3b>(i, j)[2] >> 3;
-				n = b << 11 | g << 5 | r;
+				break;
+			}
+			imshow("SourceVideo", SrcFrame);
+			resize(SrcFrame, OutFrame, dsize);
+			imshow("OutVideo", OutFrame);
+			waitKey(delay);
 
-				d1 = (uint8_t)n;
-				d2 = n >> 8;
-				bin100_out.write((char*)&d1, sizeof(d1));
-				bin100_out.write((char*)&d2, sizeof(d2));
+			for (int i = 0; i < OutFrame.rows; i++)
+			{
+				for (int j = 0; j < OutFrame.cols; j++)
+				{
+					b = OutFrame.at<Vec3b>(i, j)[0] >> 3;
+					g = OutFrame.at<Vec3b>(i, j)[1] >> 2;
+					r = OutFrame.at<Vec3b>(i, j)[2] >> 3;
+					/*n = b << 11 | g << 5 | r;*/
+					n = r << 11 | g << 5 | b;
+					d1 = (uint8_t)n;
+					d2 = n >> 8;
+					bin100_out.write((char*)&d1, sizeof(d1));
+					bin100_out.write((char*)&d2, sizeof(d2));
+				}
+				cout << frames << endl;
 			}
 		}
-
+		frames++;
 	}
 	bin100_out.close();
 }
