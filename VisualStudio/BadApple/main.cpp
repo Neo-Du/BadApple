@@ -210,7 +210,7 @@ void Bin_100_frames(char* path)
 {
 	Mat SrcFrame, OutFrame;
 	Size dsize = Size(OUTPUT_HEIGHT, OUTPUT_WIDTH);
-	ofstream bin100_out("badapple_15_fps.bin", ios::binary);
+	ofstream bin100_out("badapple_15_fps_240_180.bin", ios::binary);
 
 	namedWindow("SourceVideo", WINDOW_AUTOSIZE);
 	namedWindow("OutVideo", WINDOW_AUTOSIZE);
@@ -268,12 +268,12 @@ void Bin_100_frames(char* path)
 int main()
 {
 	//play_video(video_path);
-	pic_to_array(test_pic_path);
+	//pic_to_array(test_pic_path);
 	//Bin_output(test_pic2_path);
 	//Bin_output_2pic(test_pic_path,test_pic2_path);
 	//test_bin_file();
 
-	//Bin_100_frames(video_path);
+	Bin_100_frames(video_path);
 
 	cout << "done" << endl;
 	while (1);

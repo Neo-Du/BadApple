@@ -74,7 +74,7 @@ void MX_LTDC_Init(void)
   pLayerCfg.FBStartAdress = 0xc0000000;
   pLayerCfg.ImageWidth = 640;
   pLayerCfg.ImageHeight = 480;
-  pLayerCfg.Backcolor.Blue = 0;
+  pLayerCfg.Backcolor.Blue = 128;
   pLayerCfg.Backcolor.Green = 0;
   pLayerCfg.Backcolor.Red = 0;
   if (HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg, 0) != HAL_OK)
