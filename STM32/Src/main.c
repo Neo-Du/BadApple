@@ -59,6 +59,8 @@ PUTCHAR_PROTOTYPE
 #define VIDEO_WIDTH 640
 #define VIDEO_HEIGHT 480
 
+#define IMG_WIDTH 240
+#define IMG_HEIGHT 180
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -82,19 +84,20 @@ extern FIL SDFile; /* File object for SD */
 extern char SDPath[4];
 FRESULT res;
 
-char fileName[] = {"landscape_15_fps.bin"};
+char fileName[] = { "landscape_15_fps.bin" };
 //char fileName[] = {"badapple_15_fps.bin"};
-
 
 uint8_t buf0_ready = 0;
 uint8_t buf1_ready = 0;
 volatile uint8_t line_start = 0;
 volatile uint8_t dma_cplt = 0;
 
+uint16_t pos[12][2] = { { 15, 14 }, { 265, 14 }, { 517, 14 }, { 769, 14 }, { 15, 209 }, { 265, 209 }, { 517, 209 }, { 769, 209 }, { 15, 404 }, { 265, 404 }, { 517, 404 }, { 769, 404 } };
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
+void SystemClock_Config (void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -203,7 +206,7 @@ FRESULT open_files ()
 	while (dma_cplt != 1);
 	dma_cplt = 0;
 	line_start = 0;
-	printf("+++++++++++++++\r\n");
+	printf ("+++++++++++++++\r\n");
     }
     f_close (&SDFile);
 }
@@ -214,46 +217,112 @@ void HAL_LTDC_LineEventCallback (LTDC_HandleTypeDef*hltdc)
     line_start = 1;
 }
 
+void pic_Array_test ()
+{
+    HAL_LTDC_SetWindowSize (&hltdc, 1024, 600, 0);
+    HAL_LTDC_SetWindowPosition (&hltdc, 0, 0, 0);
+
+    int16_t a = 0xf800; //RED
+    int16_t b = 0x07E0; //Green
+    int16_t c = 0x001F; //Blue
+    int16_t d = 0xF81F; //R+B
+
+    int32_t t = 0;
+
+    for (int p = 0; p < 1024 * 600; p++)
+    {
+	aMemory2[p] = 0x00;
+    }
+    HAL_LTDC_SetAddress (&hltdc, aMemory2, 0);
+    for (t = 0; t < 240 * 45; t++)
+    {
+	for (int j = 0; j < 12; j++)
+	{
+	    int x1 = t % IMG_WIDTH;
+	    int y1 = t / IMG_WIDTH;
+	    x1 = pos[j][0] + x1;
+	    y1 = pos[j][1] + y1;
+	    aMemory2[x1 + 1024 * y1] = a;
+	}
+    }
+    for (; t < 240 * 90; t++)
+    {
+	for (int j = 0; j < 12; j++)
+	{
+	    int x2 = t % IMG_WIDTH;
+	    int y2 = t / IMG_WIDTH;
+	    x2 = pos[j][0] + x2;
+	    y2 = pos[j][1] + y2;
+	    aMemory2[x2 + 1024 * y2] = b;
+	}
+    }
+    for (; t < 240 * 135; t++)
+    {
+	for (int j = 0; j < 12; j++)
+	{
+	    int x3 = t % IMG_WIDTH;
+	    int y3 = t / IMG_WIDTH;
+	    x3 = pos[j][0] + x3;
+	    y3 = pos[j][1] + y3;
+	    aMemory2[x3 + 1024 * y3] = c;
+	}
+    }
+    for (; t < 240 * 180; t++)
+    {
+	for (int j = 0; j < 12; j++)
+	{
+	    int x4 = t % IMG_WIDTH;
+	    int y4 = t / IMG_WIDTH;
+	    x4 = pos[j][0] + x4;
+	    y4 = pos[j][1] + y4;
+	    aMemory2[x4 + 1024 * y4] = d;
+	}
+    }
+
+    while (1);
+}
+
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main (void)
 {
-  /* USER CODE BEGIN 1 */
+    /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+    /* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+    /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+    HAL_Init ();
 
-  /* USER CODE BEGIN Init */
+    /* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+    /* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+    /* Configure the system clock */
+    SystemClock_Config ();
 
-  /* USER CODE BEGIN SysInit */
+    /* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+    /* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_FMC_Init();
-  MX_LTDC_Init();
-  MX_DMA2D_Init();
-  MX_SDIO_SD_Init();
-  MX_FATFS_Init();
-  MX_USART1_UART_Init();
-  /* USER CODE BEGIN 2 */
+    /* Initialize all configured peripherals */
+    MX_GPIO_Init ();
+    MX_DMA_Init ();
+    MX_FMC_Init ();
+    MX_LTDC_Init ();
+    MX_DMA2D_Init ();
+    MX_SDIO_SD_Init ();
+    MX_FATFS_Init ();
+    MX_USART1_UART_Init ();
+    /* USER CODE BEGIN 2 */
     SDRAM_Init ();
-    LCD_test ();
+    //LCD_test ();
+    pic_Array_test ();
 
     printf ("Start\r\n");
     /*##-2- Register the file system object to the FatFs module ##############*/
@@ -269,76 +338,75 @@ int main(void)
 	open_files ();
 
     }
-  /* USER CODE END 2 */
+    /* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
     while (1)
     {
 	printf ("hello\r\n");
 	HAL_Delay (1000);
-    /* USER CODE END WHILE */
+	/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+	/* USER CODE BEGIN 3 */
     }
-  /* USER CODE END 3 */
+    /* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config (void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+    RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = { 0 };
 
-  /** Configure the main internal regulator output voltage 
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Initializes the CPU, AHB and APB busses clocks 
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 15;
-  RCC_OscInitStruct.PLL.PLLN = 216;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 8;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Activate the Over-Drive mode 
-  */
-  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Initializes the CPU, AHB and APB busses clocks 
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+    /** Configure the main internal regulator output voltage
+     */
+    __HAL_RCC_PWR_CLK_ENABLE();
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+    /** Initializes the CPU, AHB and APB busses clocks
+     */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLM = 15;
+    RCC_OscInitStruct.PLL.PLLN = 216;
+    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ = 8;
+    if (HAL_RCC_OscConfig (&RCC_OscInitStruct) != HAL_OK)
+    {
+	Error_Handler ();
+    }
+    /** Activate the Over-Drive mode
+     */
+    if (HAL_PWREx_EnableOverDrive () != HAL_OK)
+    {
+	Error_Handler ();
+    }
+    /** Initializes the CPU, AHB and APB busses clocks
+     */
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
-  PeriphClkInitStruct.PLLSAI.PLLSAIN = 96;
-  PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
-  PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+    if (HAL_RCC_ClockConfig (&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+    {
+	Error_Handler ();
+    }
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
+    PeriphClkInitStruct.PLLSAI.PLLSAIN = 96;
+    PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
+    PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
+    if (HAL_RCCEx_PeriphCLKConfig (&PeriphClkInitStruct) != HAL_OK)
+    {
+	Error_Handler ();
+    }
 }
 
 /* USER CODE BEGIN 4 */
@@ -346,15 +414,15 @@ void SystemClock_Config(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler (void)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
+    /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
     printf ("Error\r\n");
-  /* USER CODE END Error_Handler_Debug */
+    /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
