@@ -13,11 +13,11 @@ using namespace std;
 
 
 
-#define OUTPUT_HEIGHT 640
-#define OUTPUT_WIDTH 480
+#define OUTPUT_HEIGHT 240
+#define OUTPUT_WIDTH 180
 
 char video_path[] = "../../Video/BadApple.mp4";
-char test_pic_path[] = "tset.jpg";
+char test_pic_path[] = "240x160.jpg";
 char test_pic2_path[] = "tset2.jpg";
 
 
@@ -117,7 +117,7 @@ void pic_to_array(char* path)
 	total = 0;
 	Mat srcImage, outImage;
 	Size dsize = Size(OUTPUT_HEIGHT, OUTPUT_WIDTH);
-	ofstream p2a("out.txt");
+	ofstream p2a("out_240x320.txt");
 
 	srcImage = imread(path);
 	imshow("srcImage", srcImage);
@@ -138,7 +138,7 @@ void pic_to_array(char* path)
 			{
 				p2a << endl;
 			}
-			n = b << 11 | g << 5 | r;
+			n = r << 11 | g << 5 | b;
 			p2a << "0x" << hex << n << ',';
 			total++;
 		}
@@ -268,12 +268,12 @@ void Bin_100_frames(char* path)
 int main()
 {
 	//play_video(video_path);
-	//pic_to_array(test_pic_path);
+	pic_to_array(test_pic_path);
 	//Bin_output(test_pic2_path);
 	//Bin_output_2pic(test_pic_path,test_pic2_path);
 	//test_bin_file();
 
-	Bin_100_frames(video_path);
+	//Bin_100_frames(video_path);
 
 	cout << "done" << endl;
 	while (1);

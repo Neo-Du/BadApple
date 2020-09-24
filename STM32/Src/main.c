@@ -74,6 +74,7 @@ PUTCHAR_PROTOTYPE
 extern LTDC_HandleTypeDef hltdc;
 extern DMA2D_HandleTypeDef hdma2d;
 
+extern const uint16_t pic_array[43200];
 //uint32_t aMemory[262144] __attribute__((section(".ExtRAMData")));
 uint16_t aMemory0[1200 * 800] __attribute__((section(".ExtRAMData"))); // 1024 * 1024 /4    //1MB / 4
 uint16_t aMemory1[1200 * 800] __attribute__((section(".ExtRAMData1"))); // 1024 * 1024 /4    //1MB / 4
@@ -93,6 +94,7 @@ volatile uint8_t line_start = 0;
 volatile uint8_t dma_cplt = 0;
 
 uint16_t pos[12][2] = { { 15, 14 }, { 265, 14 }, { 517, 14 }, { 769, 14 }, { 15, 209 }, { 265, 209 }, { 517, 209 }, { 769, 209 }, { 15, 404 }, { 265, 404 }, { 517, 404 }, { 769, 404 } };
+uint16_t img_buf[43200] = { 0 };
 
 /* USER CODE END PV */
 
@@ -234,52 +236,34 @@ void pic_Array_test ()
 	aMemory2[p] = 0x00;
     }
     HAL_LTDC_SetAddress (&hltdc, aMemory2, 0);
-    for (t = 0; t < 240 * 45; t++)
+    uint32_t start_time = 0;
+    while (1)
     {
-	for (int j = 0; j < 12; j++)
+	start_time = HAL_GetTick ();
+	int x1 = 0;
+	int y1 = 0;
+	int x2 = 0;
+	int y2 = 0;
+	while (t++ < 43200)
 	{
-	    int x1 = t % IMG_WIDTH;
-	    int y1 = t / IMG_WIDTH;
-	    x1 = pos[j][0] + x1;
-	    y1 = pos[j][1] + y1;
-	    aMemory2[x1 + 1024 * y1] = a;
+	    x1 = t % IMG_WIDTH;
+	    y1 = t / IMG_WIDTH;
+	    aMemory2[pos[0][0] + x1 + 1024 * (pos[0][1] + y1)] = pic_array[t];
+	    aMemory2[pos[1][0] + x1 + 1024 * (pos[1][1] + y1)] = pic_array[t];
+	    aMemory2[pos[2][0] + x1 + 1024 * (pos[2][1] + y1)] = pic_array[t];
+	    aMemory2[pos[3][0] + x1 + 1024 * (pos[3][1] + y1)] = pic_array[t];
+	    aMemory2[pos[4][0] + x1 + 1024 * (pos[4][1] + y1)] = pic_array[t];
+	    aMemory2[pos[5][0] + x1 + 1024 * (pos[5][1] + y1)] = pic_array[t];
+	    aMemory2[pos[6][0] + x1 + 1024 * (pos[6][1] + y1)] = pic_array[t];
+	    aMemory2[pos[7][0] + x1 + 1024 * (pos[7][1] + y1)] = pic_array[t];
+	    aMemory2[pos[8][0] + x1 + 1024 * (pos[8][1] + y1)] = pic_array[t];
+	    aMemory2[pos[9][0] + x1 + 1024 * (pos[9][1] + y1)] = pic_array[t];
+	    aMemory2[pos[10][0] + x1 + 1024 * (pos[10][1] + y1)] = pic_array[t];
+	    aMemory2[pos[11][0] + x1 + 1024 * (pos[11][1] + y1)] = pic_array[t];
 	}
+	printf ("end %d\r\n", HAL_GetTick () - start_time);
+	printf ("+++++++++++++\r\n");
     }
-    for (; t < 240 * 90; t++)
-    {
-	for (int j = 0; j < 12; j++)
-	{
-	    int x2 = t % IMG_WIDTH;
-	    int y2 = t / IMG_WIDTH;
-	    x2 = pos[j][0] + x2;
-	    y2 = pos[j][1] + y2;
-	    aMemory2[x2 + 1024 * y2] = b;
-	}
-    }
-    for (; t < 240 * 135; t++)
-    {
-	for (int j = 0; j < 12; j++)
-	{
-	    int x3 = t % IMG_WIDTH;
-	    int y3 = t / IMG_WIDTH;
-	    x3 = pos[j][0] + x3;
-	    y3 = pos[j][1] + y3;
-	    aMemory2[x3 + 1024 * y3] = c;
-	}
-    }
-    for (; t < 240 * 180; t++)
-    {
-	for (int j = 0; j < 12; j++)
-	{
-	    int x4 = t % IMG_WIDTH;
-	    int y4 = t / IMG_WIDTH;
-	    x4 = pos[j][0] + x4;
-	    y4 = pos[j][1] + y4;
-	    aMemory2[x4 + 1024 * y4] = d;
-	}
-    }
-
-    while (1);
 }
 
 /* USER CODE END 0 */
