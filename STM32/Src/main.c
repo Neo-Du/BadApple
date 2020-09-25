@@ -35,6 +35,7 @@
 //#include "RGB565_240x130_1.h"
 //#include "L8_320X240.h"
 #include "test_pic_1.h"
+#include "pic_240x180_address.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -78,6 +79,9 @@ extern LTDC_HandleTypeDef hltdc;
 extern DMA2D_HandleTypeDef hdma2d;
 
 extern const uint16_t pic_array[43200];
+
+
+
 //uint32_t aMemory[262144] __attribute__((section(".ExtRAMData")));
 uint16_t aMemory0[1200 * 800] __attribute__((section(".ExtRAMData"))); // 1024 * 1024 /4    //1MB / 4
 uint16_t aMemory1[1200 * 800] __attribute__((section(".ExtRAMData1"))); // 1024 * 1024 /4    //1MB / 4
@@ -94,15 +98,17 @@ char fileName[] = { "badapple_15_fps_240_180.bin" };
 uint8_t buf0_ready = 0;
 uint8_t buf1_ready = 0;
 volatile uint8_t line_start = 0;
-volatile uint8_t dma_cplt = 0;
+volatile uint8_t dma_cplt = 1;
 
 uint16_t pos[12][2] = { { 15, 14 }, { 265, 14 }, { 517, 14 }, { 769, 14 }, { 15, 209 }, { 265, 209 }, { 517, 209 }, { 769, 209 }, { 15, 404 }, { 265, 404 }, { 517, 404 }, { 769, 404 } };
 uint16_t img_buf[43200] = { 0 };
+//uint16_t add_buf[43200][12] = { 0 };
+
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
+void SystemClock_Config (void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -284,38 +290,64 @@ void video_Array ()
     HAL_LTDC_ProgramLineEvent (&hltdc, 0);
     HAL_LTDC_SetWindowSize (&hltdc, 1024, 600, 0);
     HAL_LTDC_SetWindowPosition (&hltdc, 0, 0, 0);
+    uint32_t time_1 = 0;
+    uint32_t time_2 = 0;
 
+    int x1 = 0;
+    int y1 = 0;
+    //add_buf[0][0] = 0;
+
+//    while (time_2++ < 43200)
+//    {
+//	add_buf[time_2][0] = pos[0][0] + x1 + 1024 * (pos[0][1] + y1);
+//
+//    }
     while (res == FR_OK && SDFile.fptr < ino.fsize)
     {
+	time_1 = HAL_GetTick ();
 	res = f_read (&SDFile, img_buf, VIDEO_ARRAY_WIDTH * VIDEO_ARRAY_HEIGHT * 2, &dmy);
+	time_2 = HAL_GetTick ();
+	printf ("f_read:\t%d\r\n", time_2 - time_1);
+
 	int32_t t = 0;
-	int x1 = 0;
-	int y1 = 0;
-	int x2 = 0;
-	int y2 = 0;
+
+
 	while (t++ < 43200)
 	{
 	    x1 = t % IMG_WIDTH;
 	    y1 = t / IMG_WIDTH;
-	    aMemory2[pos[0][0] + x1 + 1024 * (pos[0][1] + y1)] = img_buf[t];
-	    aMemory2[pos[1][0] + x1 + 1024 * (pos[1][1] + y1)] = img_buf[t];
-	    aMemory2[pos[2][0] + x1 + 1024 * (pos[2][1] + y1)] = img_buf[t];
-	    aMemory2[pos[3][0] + x1 + 1024 * (pos[3][1] + y1)] = img_buf[t];
-	    aMemory2[pos[4][0] + x1 + 1024 * (pos[4][1] + y1)] = img_buf[t];
-	    aMemory2[pos[5][0] + x1 + 1024 * (pos[5][1] + y1)] = img_buf[t];
-	    aMemory2[pos[6][0] + x1 + 1024 * (pos[6][1] + y1)] = img_buf[t];
-	    aMemory2[pos[7][0] + x1 + 1024 * (pos[7][1] + y1)] = img_buf[t];
-	    aMemory2[pos[8][0] + x1 + 1024 * (pos[8][1] + y1)] = img_buf[t];
-	    aMemory2[pos[9][0] + x1 + 1024 * (pos[9][1] + y1)] = img_buf[t];
-	    aMemory2[pos[10][0] + x1 + 1024 * (pos[10][1] + y1)] = img_buf[t];
-	    aMemory2[pos[11][0] + x1 + 1024 * (pos[11][1] + y1)] = img_buf[t];
+	    aMemory1[pos[0][0] + x1 + 1024 * (pos[0][1] + y1)] = img_buf[t];
+	    aMemory1[pos[1][0] + x1 + 1024 * (pos[1][1] + y1)] = img_buf[t];
+	    aMemory1[pos[2][0] + x1 + 1024 * (pos[2][1] + y1)] = img_buf[t];
+	    aMemory1[pos[3][0] + x1 + 1024 * (pos[3][1] + y1)] = img_buf[t];
+	    aMemory1[pos[4][0] + x1 + 1024 * (pos[4][1] + y1)] = img_buf[t];
+	    aMemory1[pos[5][0] + x1 + 1024 * (pos[5][1] + y1)] = img_buf[t];
+	    aMemory1[pos[6][0] + x1 + 1024 * (pos[6][1] + y1)] = img_buf[t];
+	    aMemory1[pos[7][0] + x1 + 1024 * (pos[7][1] + y1)] = img_buf[t];
+	    aMemory1[pos[8][0] + x1 + 1024 * (pos[8][1] + y1)] = img_buf[t];
+	    aMemory1[pos[9][0] + x1 + 1024 * (pos[9][1] + y1)] = img_buf[t];
+	    aMemory1[pos[10][0] + x1 + 1024 * (pos[10][1] + y1)] = img_buf[t];
+	    aMemory1[pos[11][0] + x1 + 1024 * (pos[11][1] + y1)] = img_buf[t];
 	}
+
+	time_1 = HAL_GetTick ();
+	printf ("Array:\t%d\r\n", time_1 - time_2);
 	while (line_start != 1);
-	if (HAL_DMA2D_Start_IT (&hdma2d, aMemory2, aMemory0, 1024, 600) != HAL_OK)
+	time_2 = HAL_GetTick ();
+	printf ("Line:\t%d\r\n", time_2 - time_1);
+
+	while (dma_cplt != 1);
+
+	time_1 = HAL_GetTick ();
+	printf ("DMA\t%d\r\n", time_1 - time_2);
+
+	if (HAL_DMA2D_Start_IT (&hdma2d, aMemory1, aMemory0, 1024, 600) != HAL_OK)
 	{
 	    Error_Handler ();
 	}
-	while (dma_cplt != 1);
+	time_2 = HAL_GetTick ();
+	printf ("DMA_c\t%d\r\n", time_2 - time_1);
+
 	dma_cplt = 0;
 	line_start = 0;
 	printf ("+++++++++++++++\r\n");
@@ -325,41 +357,41 @@ void video_Array ()
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main (void)
 {
-  /* USER CODE BEGIN 1 */
+    /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+    /* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+    /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+    HAL_Init ();
 
-  /* USER CODE BEGIN Init */
+    /* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+    /* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+    /* Configure the system clock */
+    SystemClock_Config ();
 
-  /* USER CODE BEGIN SysInit */
+    /* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+    /* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_FMC_Init();
-  MX_LTDC_Init();
-  MX_DMA2D_Init();
-  MX_SDIO_SD_Init();
-  MX_FATFS_Init();
-  MX_USART1_UART_Init();
-  /* USER CODE BEGIN 2 */
+    /* Initialize all configured peripherals */
+    MX_GPIO_Init ();
+    MX_DMA_Init ();
+    MX_FMC_Init ();
+    MX_LTDC_Init ();
+    MX_DMA2D_Init ();
+    MX_SDIO_SD_Init ();
+    MX_FATFS_Init ();
+    MX_USART1_UART_Init ();
+    /* USER CODE BEGIN 2 */
     SDRAM_Init ();
     //LCD_test ();
     //pic_Array_test ();
@@ -379,76 +411,75 @@ int main(void)
 	video_Array ();
 
     }
-  /* USER CODE END 2 */
+    /* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
     while (1)
     {
 	printf ("hello\r\n");
 	HAL_Delay (1000);
-    /* USER CODE END WHILE */
+	/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+	/* USER CODE BEGIN 3 */
     }
-  /* USER CODE END 3 */
+    /* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config (void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+    RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = { 0 };
 
-  /** Configure the main internal regulator output voltage 
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Initializes the CPU, AHB and APB busses clocks 
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 15;
-  RCC_OscInitStruct.PLL.PLLN = 216;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 8;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Activate the Over-Drive mode 
-  */
-  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Initializes the CPU, AHB and APB busses clocks 
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+    /** Configure the main internal regulator output voltage
+     */
+    __HAL_RCC_PWR_CLK_ENABLE();
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+    /** Initializes the CPU, AHB and APB busses clocks
+     */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLM = 15;
+    RCC_OscInitStruct.PLL.PLLN = 216;
+    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ = 8;
+    if (HAL_RCC_OscConfig (&RCC_OscInitStruct) != HAL_OK)
+    {
+	Error_Handler ();
+    }
+    /** Activate the Over-Drive mode
+     */
+    if (HAL_PWREx_EnableOverDrive () != HAL_OK)
+    {
+	Error_Handler ();
+    }
+    /** Initializes the CPU, AHB and APB busses clocks
+     */
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
-  PeriphClkInitStruct.PLLSAI.PLLSAIN = 96;
-  PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
-  PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+    if (HAL_RCC_ClockConfig (&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+    {
+	Error_Handler ();
+    }
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
+    PeriphClkInitStruct.PLLSAI.PLLSAIN = 84;
+    PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
+    PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
+    if (HAL_RCCEx_PeriphCLKConfig (&PeriphClkInitStruct) != HAL_OK)
+    {
+	Error_Handler ();
+    }
 }
 
 /* USER CODE BEGIN 4 */
@@ -456,15 +487,15 @@ void SystemClock_Config(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler (void)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
+    /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
     printf ("Error\r\n");
-  /* USER CODE END Error_Handler_Debug */
+    /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
