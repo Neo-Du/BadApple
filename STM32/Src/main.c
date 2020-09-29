@@ -31,13 +31,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#define ARM_MATH_CM4
+
 #include <stdio.h>
 //#include "RGB565_240x130_1.h"
 //#include "L8_320X240.h"
 #include "test_pic_1.h"
-#include "pic_240x180_address.h"
-#include "arm_math.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -93,7 +92,8 @@ extern char SDPath[4];
 FRESULT res;
 
 char fileName[] = { "badapple_15_fps_240_180.bin" };
-//char fileName[] = {"badapple_15_fps.bin"};
+char video_240x180[] = { "badapple_15_fps_240_180.bin" };
+char video_640x480[] = { "badapple_15_fps.bin" };
 
 uint8_t buf0_ready = 0;
 uint8_t buf1_ready = 0;
@@ -102,7 +102,6 @@ volatile uint8_t dma_cplt = 1;
 
 uint16_t pos[12][2] = { { 15, 14 }, { 265, 14 }, { 517, 14 }, { 769, 14 }, { 15, 209 }, { 265, 209 }, { 517, 209 }, { 769, 209 }, { 15, 404 }, { 265, 404 }, { 517, 404 }, { 769, 404 } };
 uint16_t img_buf[43200] = { 0 };
-//uint16_t add_buf[43200][12] = { 0 };
 
 /* USER CODE END PV */
 
@@ -114,6 +113,16 @@ void SystemClock_Config (void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void DMA2D_cplt (struct __DMA2D_HandleTypeDef*hdma2d)
+{
+    dma_cplt = 1;
+}
+void HAL_LTDC_LineEventCallback (LTDC_HandleTypeDef*hltdc)
+{
+    __HAL_LTDC_ENABLE_IT(hltdc, LTDC_IT_LI);
+    line_start = 1;
+}
+
 FRESULT scan_files (char*path) /* Start node to be scanned (also used as work area) */
 {
     FRESULT res;
@@ -157,198 +166,169 @@ FRESULT scan_files (char*path) /* Start node to be scanned (also used as work ar
 
 void LCD_test ()
 {
-    //HAL_DMA2D_Start (&hdma2d, (uint32_t) &pic_array, SDRAM_BANK_ADDR, 640, 480);
-
-    int16_t a = 0xf800; //RED
-    int16_t b = 0x07E0; //Green
-    int16_t c = 0x001F; //Blue
-    int16_t d = 0xF81F; //R+B
-
     int32_t t = 0;
 
     for (t = 0; t < 640 * 120; t++)
     {
-	aMemory0[t] = a;
+	aMemory0[t] = 0xf800; //RED
     }
     for (; t < 640 * 240; t++)
     {
-	aMemory0[t] = b;
+	aMemory0[t] = 0x07E0; //Green
     }
     for (; t < 640 * 360; t++)
     {
-	aMemory0[t] = c;
+	aMemory0[t] = 0x001F; //Blue
     }
     for (; t < 640 * 480; t++)
     {
-	aMemory0[t] = d;
+	aMemory0[t] = 0xF81F; //R+B
     }
-}
-void DMA2D_cplt (struct __DMA2D_HandleTypeDef*hdma2d)
-{
-    dma_cplt = 1;
 }
 
 FRESULT open_files ()
 {
+
+}
+
+void play_video (char*video_name)
+{
     FRESULT res;
     UINT dmy;
     FILINFO ino;
 
-    res = f_open (&SDFile, fileName, FA_READ);
+    res = f_open (&SDFile, video_name, FA_READ);
 
-    f_stat (fileName, &ino);
+    f_stat (video_name, &ino);
 
     hdma2d.XferCpltCallback = DMA2D_cplt;
-    HAL_LTDC_ProgramLineEvent (&hltdc, 0);
+//     HAL_LTDC_ProgramLineEvent (&hltdc, 0);
 
     while (res == FR_OK && SDFile.fptr < ino.fsize)
     {
-	/* any other processes... */
-	/* Fill output stream periodicaly or on-demand */
-
+	HAL_GPIO_TogglePin (GPIOB, GPIO_PIN_1);
 	res = f_read (&SDFile, aMemory1, VIDEO_WIDTH * VIDEO_HEIGHT * 2, &dmy);
 
-	while (line_start != 1);
+//	while (line_start != 1);
+//	while (dma_cplt != 1);
 	if (HAL_DMA2D_Start_IT (&hdma2d, aMemory1, aMemory0, VIDEO_WIDTH, VIDEO_HEIGHT) != HAL_OK)
 	{
 	    Error_Handler ();
 	}
-	while (dma_cplt != 1);
 	dma_cplt = 0;
 	line_start = 0;
-	printf ("+++++++++++++++\r\n");
     }
     f_close (&SDFile);
 }
-
-void HAL_LTDC_LineEventCallback (LTDC_HandleTypeDef*hltdc)
-{
-    __HAL_LTDC_ENABLE_IT(hltdc, LTDC_IT_LI);
-    line_start = 1;
-}
-
 void pic_Array_test ()
 {
     HAL_LTDC_SetWindowSize (&hltdc, 1024, 600, 0);
     HAL_LTDC_SetWindowPosition (&hltdc, 0, 0, 0);
+    HAL_LTDC_SetAddress (&hltdc, aMemory1, 0);
 
-    int16_t a = 0xf800; //RED
-    int16_t b = 0x07E0; //Green
-    int16_t c = 0x001F; //Blue
-    int16_t d = 0xF81F; //R+B
+    uint32_t pos_x = 0;
+    uint32_t pos_y = 0;
+    uint32_t pix = 0;
+    uint32_t a1 = 0;
+    uint32_t a2 = 0;
+    uint32_t a3 = 0;
+    uint8_t pos_num = 0;
+    int p = 0;
 
-    int32_t t = 0;
-
-//    for (int p = 0; p < 1024 * 600; p++)
-//    {
-//	aMemory2[p] = 0x00;
-//    }
-    HAL_LTDC_SetAddress (&hltdc, aMemory2, 0);
-    uint32_t start_time = 0;
-//    while (1)
-//    {
-    start_time = HAL_GetTick ();
-    int x1 = 0;
-    int y1 = 0;
-    int x2 = 0;
-    int y2 = 0;
-    while (t++ < 43200)
+    for (p = 0; p < 1024 * 600; p++)
     {
-	x1 = t % IMG_WIDTH;
-	y1 = t / IMG_WIDTH;
-	aMemory2[pos[0][0] + x1 + 1024 * (pos[0][1] + y1)] = img_buf[t];
-	aMemory2[pos[1][0] + x1 + 1024 * (pos[1][1] + y1)] = img_buf[t];
-	aMemory2[pos[2][0] + x1 + 1024 * (pos[2][1] + y1)] = img_buf[t];
-	aMemory2[pos[3][0] + x1 + 1024 * (pos[3][1] + y1)] = img_buf[t];
-	aMemory2[pos[4][0] + x1 + 1024 * (pos[4][1] + y1)] = img_buf[t];
-	aMemory2[pos[5][0] + x1 + 1024 * (pos[5][1] + y1)] = img_buf[t];
-	aMemory2[pos[6][0] + x1 + 1024 * (pos[6][1] + y1)] = img_buf[t];
-	aMemory2[pos[7][0] + x1 + 1024 * (pos[7][1] + y1)] = img_buf[t];
-	aMemory2[pos[8][0] + x1 + 1024 * (pos[8][1] + y1)] = img_buf[t];
-	aMemory2[pos[9][0] + x1 + 1024 * (pos[9][1] + y1)] = img_buf[t];
-	aMemory2[pos[10][0] + x1 + 1024 * (pos[10][1] + y1)] = img_buf[t];
-	aMemory2[pos[11][0] + x1 + 1024 * (pos[11][1] + y1)] = img_buf[t];
+	aMemory1[p] = 0x00; // black
     }
-    printf ("end %d\r\n", HAL_GetTick () - start_time);
-    printf ("+++++++++++++\r\n");
-//    }
+    p = 0;
+    for (; p < 240 * 45; p++)
+    {
+	img_buf[p] = 0xf800; // red
+    }
+    for (; p < 240 * 90; p++)
+    {
+	img_buf[p] = 0x07E0; // green
+    }
+    for (p; p < 240 * 135; p++)
+    {
+	img_buf[p] = 0x001F; // blue
+    }
+    for (; p < 240 * 180; p++)
+    {
+	img_buf[p] = 0xF81F; // purple
+    }
+
+    while (pix++ < 43200)
+    {
+	pos_x = pix % IMG_WIDTH;
+	pos_y = pix / IMG_WIDTH;
+
+	for (pos_num = 0; pos_num < 12; pos_num++)
+	{
+	    a1 = pos[pos_num][0] + pos_x;
+	    a2 = 1024 * pos[pos_num][1] + 1024 * pos_y;
+	    a3 = a1 + a2;
+	    aMemory1[a3] = img_buf[pix];
+	}
+    }
 }
 
-void video_Array ()
+void video_Array (char*vidoe_array_name)
 {
-
     FRESULT res;
     UINT dmy;
     FILINFO ino;
 
-    res = f_open (&SDFile, fileName, FA_READ);
+    uint32_t pos_x = 0;
+    uint32_t pos_y = 0;
+    uint32_t pix = 0;
+    uint32_t a1 = 0;
+    uint32_t a2 = 0;
+    uint32_t a3 = 0;
+    uint8_t pos_num = 0;
 
-    f_stat (fileName, &ino);
+    for (int p = 0; p < 1024 * 600; p++)
+    {
+	aMemory1[p] = 0b1111100000000000;
+    }
+
+    res = f_open (&SDFile, vidoe_array_name, FA_READ);
+
+    f_stat (vidoe_array_name, &ino);
 
     hdma2d.XferCpltCallback = DMA2D_cplt;
     HAL_LTDC_ProgramLineEvent (&hltdc, 0);
     HAL_LTDC_SetWindowSize (&hltdc, 1024, 600, 0);
     HAL_LTDC_SetWindowPosition (&hltdc, 0, 0, 0);
-    uint32_t time_1 = 0;
-    uint32_t time_2 = 0;
 
-    uint32_t x1 = 0;
-    uint32_t y1 = 0;
-    //add_buf[0][0] = 0;
-
-//    while (time_2++ < 43200)
-//    {
-//	add_buf[time_2][0] = pos[0][0] + x1 + 1024 * (pos[0][1] + y1);
-//
-//    }
-
-    int32_t t = 0;
-    int32_t a1 = 0;
-    int32_t a2 = 0;
-    int32_t a3 = 0;
-    uint8_t temp_1 = 0
     while (res == FR_OK && SDFile.fptr < ino.fsize)
     {
-	time_1 = HAL_GetTick ();
-	res = f_read (&SDFile, img_buf, VIDEO_ARRAY_WIDTH * VIDEO_ARRAY_HEIGHT * 2, &dmy);
-	time_2 = HAL_GetTick ();
-	printf ("f_read:\t%d\r\n", time_2 - time_1);
-
-	while (t++ < 43200)
+	HAL_GPIO_TogglePin (GPIOB, GPIO_PIN_1);
+	f_read (&SDFile, img_buf, VIDEO_ARRAY_WIDTH * VIDEO_ARRAY_HEIGHT * 2, &dmy);
+	pix = 0;
+	while (pix++ < 43200)
 	{
-	    x1 = t % IMG_WIDTH;
-	    y1 = t / IMG_WIDTH;
+	    pos_x = pix % IMG_WIDTH;
+	    pos_y = pix / IMG_WIDTH;
 
-	    for (temp_1 = 0; temp_1 < 12; temp_1++)
+	    for (pos_num = 0; pos_num < 12; pos_num++)
 	    {
-		a1 = pos[temp_1][0] + x1;
-		a2 = 1024 * pos[temp_1][1] + 1024 * y1;
+		a1 = pos[pos_num][0] + pos_x;
+		a2 = 1024 * pos[pos_num][1] + 1024 * pos_y;
 		a3 = a1 + a2;
-		aMemory1[a3] = img_buf[t];
+		aMemory1[a3] = img_buf[pix];
 	    }
 	}
 
-	time_1 = HAL_GetTick ();
-	printf ("Array:\t%d\r\n", time_1 - time_2);
 	while (line_start != 1);
-	time_2 = HAL_GetTick ();
-	printf ("Line:\t%d\r\n", time_2 - time_1);
 
 	while (dma_cplt != 1);
-
-	time_1 = HAL_GetTick ();
-	printf ("DMA\t%d\r\n", time_1 - time_2);
 
 	if (HAL_DMA2D_Start_IT (&hdma2d, aMemory1, aMemory0, 1024, 600) != HAL_OK)
 	{
 	    Error_Handler ();
 	}
-	time_2 = HAL_GetTick ();
-	printf ("DMA_c\t%d\r\n", time_2 - time_1);
-
 	dma_cplt = 0;
 	line_start = 0;
-	printf ("+++++++++++++++\r\n");
     }
     f_close (&SDFile);
 }
@@ -406,7 +386,9 @@ int main (void)
     {
 //	scan_files (SDPath);
 //	open_files ();
-	video_Array ();
+//	pic_Array_test ();
+	play_video (video_640x480);
+//	video_Array (video_240x180);
 
     }
     /* USER CODE END 2 */
