@@ -407,7 +407,7 @@ int main (void)
 //	play_video (video_landscape_640x480, 640, 480);		//12FPS
 //	play_video (video_badApple_640x480, 640, 480);		//12FPS
 //	play_video (video_badApple_800x600, 800, 600);		//8FPS
-	play_video (video_landscape_1024x600, 1024, 600);	//6FPS
+	play_video (video_landscape_1024x600, 1024, 600);	//6.2FPS
 
 //	video_Array (video_badApple_240x180);
 
