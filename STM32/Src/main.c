@@ -31,11 +31,13 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#define ARM_MATH_CM4
 #include <stdio.h>
 //#include "RGB565_240x130_1.h"
 //#include "L8_320X240.h"
 #include "test_pic_1.h"
 #include "pic_240x180_address.h"
+#include "arm_math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -80,8 +82,6 @@ extern DMA2D_HandleTypeDef hdma2d;
 
 extern const uint16_t pic_array[43200];
 
-
-
 //uint32_t aMemory[262144] __attribute__((section(".ExtRAMData")));
 uint16_t aMemory0[1200 * 800] __attribute__((section(".ExtRAMData"))); // 1024 * 1024 /4    //1MB / 4
 uint16_t aMemory1[1200 * 800] __attribute__((section(".ExtRAMData1"))); // 1024 * 1024 /4    //1MB / 4
@@ -103,7 +103,6 @@ volatile uint8_t dma_cplt = 1;
 uint16_t pos[12][2] = { { 15, 14 }, { 265, 14 }, { 517, 14 }, { 769, 14 }, { 15, 209 }, { 265, 209 }, { 517, 209 }, { 769, 209 }, { 15, 404 }, { 265, 404 }, { 517, 404 }, { 769, 404 } };
 uint16_t img_buf[43200] = { 0 };
 //uint16_t add_buf[43200][12] = { 0 };
-
 
 /* USER CODE END PV */
 
@@ -293,8 +292,8 @@ void video_Array ()
     uint32_t time_1 = 0;
     uint32_t time_2 = 0;
 
-    int x1 = 0;
-    int y1 = 0;
+    uint32_t x1 = 0;
+    uint32_t y1 = 0;
     //add_buf[0][0] = 0;
 
 //    while (time_2++ < 43200)
@@ -302,6 +301,12 @@ void video_Array ()
 //	add_buf[time_2][0] = pos[0][0] + x1 + 1024 * (pos[0][1] + y1);
 //
 //    }
+
+    int32_t t = 0;
+    int32_t a1 = 0;
+    int32_t a2 = 0;
+    int32_t a3 = 0;
+    uint8_t temp_1 = 0
     while (res == FR_OK && SDFile.fptr < ino.fsize)
     {
 	time_1 = HAL_GetTick ();
@@ -309,25 +314,18 @@ void video_Array ()
 	time_2 = HAL_GetTick ();
 	printf ("f_read:\t%d\r\n", time_2 - time_1);
 
-	int32_t t = 0;
-
-
 	while (t++ < 43200)
 	{
 	    x1 = t % IMG_WIDTH;
 	    y1 = t / IMG_WIDTH;
-	    aMemory1[pos[0][0] + x1 + 1024 * (pos[0][1] + y1)] = img_buf[t];
-	    aMemory1[pos[1][0] + x1 + 1024 * (pos[1][1] + y1)] = img_buf[t];
-	    aMemory1[pos[2][0] + x1 + 1024 * (pos[2][1] + y1)] = img_buf[t];
-	    aMemory1[pos[3][0] + x1 + 1024 * (pos[3][1] + y1)] = img_buf[t];
-	    aMemory1[pos[4][0] + x1 + 1024 * (pos[4][1] + y1)] = img_buf[t];
-	    aMemory1[pos[5][0] + x1 + 1024 * (pos[5][1] + y1)] = img_buf[t];
-	    aMemory1[pos[6][0] + x1 + 1024 * (pos[6][1] + y1)] = img_buf[t];
-	    aMemory1[pos[7][0] + x1 + 1024 * (pos[7][1] + y1)] = img_buf[t];
-	    aMemory1[pos[8][0] + x1 + 1024 * (pos[8][1] + y1)] = img_buf[t];
-	    aMemory1[pos[9][0] + x1 + 1024 * (pos[9][1] + y1)] = img_buf[t];
-	    aMemory1[pos[10][0] + x1 + 1024 * (pos[10][1] + y1)] = img_buf[t];
-	    aMemory1[pos[11][0] + x1 + 1024 * (pos[11][1] + y1)] = img_buf[t];
+
+	    for (temp_1 = 0; temp_1 < 12; temp_1++)
+	    {
+		a1 = pos[temp_1][0] + x1;
+		a2 = 1024 * pos[temp_1][1] + 1024 * y1;
+		a3 = a1 + a2;
+		aMemory1[a3] = img_buf[t];
+	    }
 	}
 
 	time_1 = HAL_GetTick ();
