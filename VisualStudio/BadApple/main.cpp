@@ -19,7 +19,7 @@ using namespace std;
 char video_path[] = "../../Video/BadApple.mp4";
 char test_pic_path[] = "240x160.jpg";
 char test_pic2_path[] = "tset2.jpg";
-
+uint16_t pos[12][2] = { { 15, 14 }, { 265, 14 }, { 517, 14 }, { 769, 14 }, { 15, 209 }, { 265, 209 }, { 517, 209 }, { 769, 209 }, { 15, 404 }, { 265, 404 }, { 517, 404 }, { 769, 404 } };
 
 VideoCapture srcVideo = NULL;
 ofstream outFile("out.bin", ios::out | ios::binary);
@@ -234,7 +234,7 @@ void Bin_100_frames(char* path)
 	{
 		srcVideo >> SrcFrame;
 		if (frames % 2 != 0 && frames > 35)
-		{			
+		{
 			if (SrcFrame.empty())
 			{
 				break;
@@ -265,6 +265,28 @@ void Bin_100_frames(char* path)
 	}
 	bin100_out.close();
 }
+void make_pos_file()
+{
+	ofstream posOutFile("pos_12_frame.bin", ios::out | ios::binary);
+	int x1 = 0;
+	int y1 = 0;
+	int32_t add_buf = 0;
+	int t = 0;
+	int j = 0;
+	while (t++ < 43200)
+	{
+		x1 = t % 240;
+		y1 = t / 240;
+		for (j = 0; j < 12; j++)
+		{
+			add_buf = pos[j][0] + x1 + 1024 * (pos[j][1] + y1);
+			posOutFile.write((char*)&add_buf, sizeof(add_buf));
+		}
+
+	}
+	posOutFile.close();
+
+}
 int main()
 {
 	//play_video(video_path);
@@ -273,8 +295,8 @@ int main()
 	//Bin_output_2pic(test_pic_path,test_pic2_path);
 	//test_bin_file();
 
-	Bin_100_frames(video_path);
-
+	//Bin_100_frames(video_path);
+	make_pos_file();
 	cout << "done" << endl;
 	while (1);
 	waitKey(0);
