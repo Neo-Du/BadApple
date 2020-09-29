@@ -66,6 +66,10 @@ PUTCHAR_PROTOTYPE
 
 #define IMG_WIDTH 240
 #define IMG_HEIGHT 180
+
+#define LCD_WIDTH 1024
+#define LCD_HEIGHT 600
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -89,20 +93,22 @@ uint16_t aMemory2[1200 * 800] __attribute__((section(".ExtRAMData2"))); // 1024 
 extern FATFS SDFatFS; /* File system object for SD logical drive */
 extern FIL SDFile; /* File object for SD */
 extern char SDPath[4];
-FRESULT res;
 
-char fileName[] = { "badapple_15_fps_240_180.bin" };
-char video_240x180[] = { "badapple_15_fps_240_180.bin" };
-char video_640x480[] = { "badapple_15_fps.bin" };
+char video_badApple_240x180[] = { "badapple_15_fps_240_180.bin" };
+char video_badApple_640x480[] = { "badapple_15_fps.bin" };
+char video_badApple_800x600[] = { "badApple_15_fps_800_600.bin" };
+
+char video_landscape_640x480[] = { "landscape_15_fps.bin" };
+char video_landscape_1024x600[] = { "landscape_15_fps_1024_600.bin" };
 
 uint8_t buf0_ready = 0;
 uint8_t buf1_ready = 0;
 volatile uint8_t line_start = 0;
-volatile uint8_t dma_cplt = 1;
+volatile uint8_t dma_cplt = 0;
 
 uint16_t pos[12][2] = { { 15, 14 }, { 265, 14 }, { 517, 14 }, { 769, 14 }, { 15, 209 }, { 265, 209 }, { 517, 209 }, { 769, 209 }, { 15, 404 }, { 265, 404 }, { 517, 404 }, { 769, 404 } };
 uint16_t img_buf[43200] = { 0 };
-
+LTDC_ColorTypeDef lcd_back_color;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -186,35 +192,46 @@ void LCD_test ()
     }
 }
 
-FRESULT open_files ()
-{
-
-}
-
-void play_video (char*video_name)
+void play_video (char*video_name,uint16_t vidoe_width,uint16_t video_hight)
 {
     FRESULT res;
     UINT dmy;
     FILINFO ino;
+
+    HAL_LTDC_SetWindowSize (&hltdc, vidoe_width, video_hight, 0);
+    HAL_LTDC_SetWindowPosition (&hltdc, (LCD_WIDTH - vidoe_width) / 2, (LCD_HEIGHT - video_hight) / 2, 0);
+    HAL_LTDC_ProgramLineEvent (&hltdc, 0);
 
     res = f_open (&SDFile, video_name, FA_READ);
 
     f_stat (video_name, &ino);
 
     hdma2d.XferCpltCallback = DMA2D_cplt;
-//     HAL_LTDC_ProgramLineEvent (&hltdc, 0);
+    uint32_t t1 = 0;
+    uint32_t t2 = 0;
 
     while (res == FR_OK && SDFile.fptr < ino.fsize)
     {
 	HAL_GPIO_TogglePin (GPIOB, GPIO_PIN_1);
-	res = f_read (&SDFile, aMemory1, VIDEO_WIDTH * VIDEO_HEIGHT * 2, &dmy);
+	t1 = HAL_GetTick();
+	res = f_read (&SDFile, aMemory1, vidoe_width * video_hight * 2, &dmy);
 
-//	while (line_start != 1);
-//	while (dma_cplt != 1);
-	if (HAL_DMA2D_Start_IT (&hdma2d, aMemory1, aMemory0, VIDEO_WIDTH, VIDEO_HEIGHT) != HAL_OK)
+	t2 = HAL_GetTick();
+	printf("F_read: %d \r\n",t2 - t1);
+
+	while (line_start != 1);
+
+	t1 = HAL_GetTick();
+	printf("line_start: %d \r\n",t1 - t2);
+
+	if (HAL_DMA2D_Start_IT (&hdma2d, aMemory1, aMemory0, vidoe_width, video_hight) != HAL_OK)
 	{
 	    Error_Handler ();
 	}
+	while (dma_cplt != 1);
+	t2 = HAL_GetTick();
+	printf("DMA: %d \r\n",t2 - t1);
+
 	dma_cplt = 0;
 	line_start = 0;
     }
@@ -224,7 +241,6 @@ void pic_Array_test ()
 {
     HAL_LTDC_SetWindowSize (&hltdc, 1024, 600, 0);
     HAL_LTDC_SetWindowPosition (&hltdc, 0, 0, 0);
-    HAL_LTDC_SetAddress (&hltdc, aMemory1, 0);
 
     uint32_t pos_x = 0;
     uint32_t pos_y = 0;
@@ -237,7 +253,7 @@ void pic_Array_test ()
 
     for (p = 0; p < 1024 * 600; p++)
     {
-	aMemory1[p] = 0x00; // black
+	aMemory0[p] = 0x00; // black
     }
     p = 0;
     for (; p < 240 * 45; p++)
@@ -267,7 +283,7 @@ void pic_Array_test ()
 	    a1 = pos[pos_num][0] + pos_x;
 	    a2 = 1024 * pos[pos_num][1] + 1024 * pos_y;
 	    a3 = a1 + a2;
-	    aMemory1[a3] = img_buf[pix];
+	    aMemory0[a3] = img_buf[pix];
 	}
     }
 }
@@ -299,7 +315,7 @@ void video_Array (char*vidoe_array_name)
     HAL_LTDC_ProgramLineEvent (&hltdc, 0);
     HAL_LTDC_SetWindowSize (&hltdc, 1024, 600, 0);
     HAL_LTDC_SetWindowPosition (&hltdc, 0, 0, 0);
-
+    dma_cplt = 1;
     while (res == FR_OK && SDFile.fptr < ino.fsize)
     {
 	HAL_GPIO_TogglePin (GPIOB, GPIO_PIN_1);
@@ -371,8 +387,8 @@ int main (void)
     MX_USART1_UART_Init ();
     /* USER CODE BEGIN 2 */
     SDRAM_Init ();
-    //LCD_test ();
-    //pic_Array_test ();
+//    LCD_test ();
+//    HAL_Delay (1000);
 
     printf ("Start\r\n");
     /*##-2- Register the file system object to the FatFs module ##############*/
@@ -385,10 +401,15 @@ int main (void)
     else
     {
 //	scan_files (SDPath);
-//	open_files ();
 //	pic_Array_test ();
-	play_video (video_640x480);
-//	video_Array (video_240x180);
+//	HAL_Delay (1000);
+//	play_video (video_badApple_240x180, 240, 180);		//12FPS
+//	play_video (video_landscape_640x480, 640, 480);		//12FPS
+//	play_video (video_badApple_640x480, 640, 480);		//12FPS
+//	play_video (video_badApple_800x600, 800, 600);		//8FPS
+	play_video (video_landscape_1024x600, 1024, 600);	//6FPS
+
+//	video_Array (video_badApple_240x180);
 
     }
     /* USER CODE END 2 */

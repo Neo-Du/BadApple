@@ -258,13 +258,75 @@ void Bin_100_frames(char* path)
 					bin100_out.write((char*)&d1, sizeof(d1));
 					bin100_out.write((char*)&d2, sizeof(d2));
 				}
-				cout << frames << endl;
 			}
+			cout << frames << endl;
 		}
 		frames++;
 	}
 	bin100_out.close();
 }
+
+void bin_full_frames(char* path)
+{
+	Mat SrcFrame, OutFrame;
+	Size dsize = Size(800, 600);
+	ofstream bin100_out("badApple_15_fps_800_600.bin", ios::binary);
+
+	namedWindow("SourceVideo", WINDOW_AUTOSIZE);
+	namedWindow("OutVideo", WINDOW_AUTOSIZE);
+	srcVideo = VideoCapture(path);
+	if (!srcVideo.isOpened())
+	{
+		cout << "Error, can not open file" << endl;
+	}
+	cout << "Source video Width=" << srcVideo.get(CAP_PROP_FRAME_WIDTH)
+		<< "  Height=" << srcVideo.get(CAP_PROP_FRAME_HEIGHT)
+		<< " FPS : " << srcVideo.get(CAP_PROP_FPS)
+		<< endl;
+
+	int delay = 1000 / srcVideo.get(CAP_PROP_FPS);
+	int frames = 0;
+	int b, g, r;
+	uint8_t d1, d2;
+	uint16_t n;
+
+	for (;;)
+	{
+		srcVideo >> SrcFrame;
+		if (frames % 2 != 0 )
+		{
+			if (SrcFrame.empty())
+			{
+				break;
+			}
+			imshow("SourceVideo", SrcFrame);
+			resize(SrcFrame, OutFrame, dsize);
+			imshow("OutVideo", OutFrame);
+			waitKey(delay);
+
+			for (int i = 0; i < OutFrame.rows; i++)
+			{
+				for (int j = 0; j < OutFrame.cols; j++)
+				{
+					b = OutFrame.at<Vec3b>(i, j)[0] >> 3;
+					g = OutFrame.at<Vec3b>(i, j)[1] >> 2;
+					r = OutFrame.at<Vec3b>(i, j)[2] >> 3;
+					/*n = b << 11 | g << 5 | r;*/
+					n = r << 11 | g << 5 | b;
+					d1 = (uint8_t)n;
+					d2 = n >> 8;
+					bin100_out.write((char*)&d1, sizeof(d1));
+					bin100_out.write((char*)&d2, sizeof(d2));
+				}
+
+			}
+			cout << frames << endl;
+		}
+		frames++;
+	}
+	bin100_out.close();
+}
+
 void make_pos_file()
 {
 	ofstream posOutFile("pos_12_frame.bin", ios::out | ios::binary);
@@ -296,7 +358,8 @@ int main()
 	//test_bin_file();
 
 	//Bin_100_frames(video_path);
-	make_pos_file();
+	//make_pos_file();
+	bin_full_frames(video_path);
 	cout << "done" << endl;
 	while (1);
 	waitKey(0);
