@@ -23,6 +23,7 @@
 #include "dma.h"
 #include "dma2d.h"
 #include "fatfs.h"
+#include "libjpeg.h"
 #include "ltdc.h"
 #include "sdio.h"
 #include "usart.h"
@@ -52,6 +53,11 @@ PUTCHAR_PROTOTYPE
     USART1->DR = (uint8_t) ch;
     return ch;
 }
+
+struct jpeg_decompress_struct cinfo;
+/* This struct represents a JPEG error handler */
+struct jpeg_error_mgr jerr;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -101,6 +107,14 @@ char video_badApple_800x600[] = { "badApple_15_fps_800_600.bin" };
 char video_landscape_640x480[] = { "landscape_15_fps.bin" };
 char video_landscape_1024x600[] = { "landscape_15_fps_1024_600.bin" };
 
+//char jpeg_1024x600[] = { "1024x600.jpg" };
+char jpeg_1024x600[] = { "1024x600_color_bar.jpg" };
+
+uint8_t _aucLine[81920];
+
+uint32_t offset = 0;
+uint32_t line_counter = 0;
+
 uint8_t buf0_ready = 0;
 uint8_t buf1_ready = 0;
 volatile uint8_t line_start = 0;
@@ -108,6 +122,9 @@ volatile uint8_t dma_cplt = 0;
 
 uint16_t pos[12][2] = { { 15, 14 }, { 265, 14 }, { 517, 14 }, { 769, 14 }, { 15, 209 }, { 265, 209 }, { 517, 209 }, { 769, 209 }, { 15, 404 }, { 265, 404 }, { 517, 404 }, { 769, 404 } };
 uint16_t img_buf[43200] = { 0 };
+
+uint16_t rgb565;
+
 LTDC_ColorTypeDef lcd_back_color;
 /* USER CODE END PV */
 
@@ -213,24 +230,24 @@ void play_video (char*video_name,uint16_t vidoe_width,uint16_t video_hight)
     while (res == FR_OK && SDFile.fptr < ino.fsize)
     {
 	HAL_GPIO_TogglePin (GPIOB, GPIO_PIN_1);
-	t1 = HAL_GetTick();
+	t1 = HAL_GetTick ();
 	res = f_read (&SDFile, aMemory1, vidoe_width * video_hight * 2, &dmy);
 
-	t2 = HAL_GetTick();
-	printf("F_read: %d \r\n",t2 - t1);
+	t2 = HAL_GetTick ();
+	printf ("F_read: %d \r\n", t2 - t1);
 
 	while (line_start != 1);
 
-	t1 = HAL_GetTick();
-	printf("line_start: %d \r\n",t1 - t2);
+	t1 = HAL_GetTick ();
+	printf ("line_start: %d \r\n", t1 - t2);
 
 	if (HAL_DMA2D_Start_IT (&hdma2d, aMemory1, aMemory0, vidoe_width, video_hight) != HAL_OK)
 	{
 	    Error_Handler ();
 	}
 	while (dma_cplt != 1);
-	t2 = HAL_GetTick();
-	printf("DMA: %d \r\n",t2 - t1);
+	t2 = HAL_GetTick ();
+	printf ("DMA: %d \r\n", t2 - t1);
 
 	dma_cplt = 0;
 	line_start = 0;
@@ -348,6 +365,86 @@ void video_Array (char*vidoe_array_name)
     }
     f_close (&SDFile);
 }
+
+void jpeg_decode (JFILE*file,uint32_t width,uint8_t*buff,uint8_t (*callback) (uint8_t*,uint32_t))
+{
+
+    /* Decode JPEG Image */
+    JSAMPROW buffer[2] = { 0 }; /* Output row buffer */
+    uint32_t row_stride = 0; /* physical row width in image buffer */
+
+    buffer[0] = buff;
+
+    /* Step 1: allocate and initialize JPEG decompression object */
+    cinfo.err = jpeg_std_error (&jerr);
+
+    /* Initialize the JPEG decompression object */
+    jpeg_create_decompress(&cinfo);
+
+    jpeg_stdio_src (&cinfo, file);
+
+    /* Step 3: read image parameters with jpeg_read_header() */
+    jpeg_read_header (&cinfo, TRUE);
+
+    /* Step 4: set parameters for decompression */
+    cinfo.dct_method = JDCT_FLOAT;
+
+    /* Step 5: start decompressor */
+    jpeg_start_decompress (&cinfo);
+
+    row_stride = width * 3;
+    while (cinfo.output_scanline < cinfo.output_height)
+    {
+	(void) jpeg_read_scanlines (&cinfo, buffer, 1);
+
+	if (callback (buffer[0], cinfo.output_width) != 0)
+	{
+	    break;
+	}
+    }
+
+    /* Step 6: Finish decompression */
+    jpeg_finish_decompress (&cinfo);
+
+    /* Step 7: Release JPEG decompression object */
+    jpeg_destroy_decompress (&cinfo);
+
+}
+
+static uint8_t Jpeg_CallbackFunction (uint8_t*Row,uint32_t DataLength)
+{
+//    offset = (0xC0000000 + (1024 * (600 - line_counter - 1) * 3));
+
+    for (uint32_t x = 0; x < DataLength; x++)
+    {
+	rgb565 = (((*Row) << 8) & 0xF800) | (((*(Row + 1)) << 3) & 0x07E0) | (((*(Row + 2)) >> 3) & 0x001F);
+	aMemory0[1024 * line_counter + x] = rgb565;
+	Row += 3;
+
+    }
+    line_counter++;
+    return 0;
+}
+void show_jpeg (char*jpeg_name,uint16_t jpeg_width,uint16_t jpeg_hight)
+{
+    HAL_LTDC_SetWindowSize (&hltdc, 1024, 600, 0);
+    HAL_LTDC_SetWindowPosition (&hltdc, 0, 0, 0);
+
+    int32_t t = 0;
+
+    for (t = 0; t < 1024 * 600; t++)
+    {
+	aMemory0[t] = 0x0000; //RED
+    }
+
+    if (f_open (&SDFile, jpeg_name, FA_READ) == FR_OK)
+    {
+	jpeg_decode (&SDFile, jpeg_width, _aucLine, Jpeg_CallbackFunction);
+	f_close (&SDFile);
+
+    }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -385,10 +482,11 @@ int main (void)
     MX_SDIO_SD_Init ();
     MX_FATFS_Init ();
     MX_USART1_UART_Init ();
+    MX_LIBJPEG_Init ();
     /* USER CODE BEGIN 2 */
     SDRAM_Init ();
-//    LCD_test ();
-//    HAL_Delay (1000);
+    LCD_test ();
+    HAL_Delay (1000);
 
     printf ("Start\r\n");
     /*##-2- Register the file system object to the FatFs module ##############*/
@@ -407,9 +505,9 @@ int main (void)
 //	play_video (video_landscape_640x480, 640, 480);		//12FPS
 //	play_video (video_badApple_640x480, 640, 480);		//12FPS
 //	play_video (video_badApple_800x600, 800, 600);		//8FPS
-	play_video (video_landscape_1024x600, 1024, 600);	//6.2FPS
-
+//	play_video (video_landscape_1024x600, 1024, 600);	//6.2FPS
 //	video_Array (video_badApple_240x180);
+	show_jpeg (jpeg_1024x600, 1024, 600);
 
     }
     /* USER CODE END 2 */
