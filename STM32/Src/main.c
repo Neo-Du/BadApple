@@ -107,10 +107,10 @@ char video_badApple_800x600[] = { "badApple_15_fps_800_600.bin" };
 char video_landscape_640x480[] = { "landscape_15_fps.bin" };
 char video_landscape_1024x600[] = { "landscape_15_fps_1024_600.bin" };
 
-//char jpeg_1024x600[] = { "1024x600.jpg" };
-char jpeg_1024x600[] = { "1024x600_color_bar.jpg" };
+char jpeg_name[] = { "1024x600.jpg" };
+char jpeg_color_bar[] = { "1024x600_color_bar.jpg" };
 
-uint8_t _aucLine[81920];
+uint8_t _aucLine[4096];
 
 uint32_t offset = 0;
 uint32_t line_counter = 0;
@@ -402,10 +402,8 @@ void jpeg_decode (JFILE*file,uint32_t width,uint8_t*buff,uint8_t (*callback) (ui
 	    break;
 	}
     }
-
     /* Step 6: Finish decompression */
     jpeg_finish_decompress (&cinfo);
-
     /* Step 7: Release JPEG decompression object */
     jpeg_destroy_decompress (&cinfo);
 
@@ -413,8 +411,6 @@ void jpeg_decode (JFILE*file,uint32_t width,uint8_t*buff,uint8_t (*callback) (ui
 
 static uint8_t Jpeg_CallbackFunction (uint8_t*Row,uint32_t DataLength)
 {
-//    offset = (0xC0000000 + (1024 * (600 - line_counter - 1) * 3));
-
     for (uint32_t x = 0; x < DataLength; x++)
     {
 	rgb565 = (((*Row) << 8) & 0xF800) | (((*(Row + 1)) << 3) & 0x07E0) | (((*(Row + 2)) >> 3) & 0x001F);
@@ -429,16 +425,11 @@ void show_jpeg (char*jpeg_name,uint16_t jpeg_width,uint16_t jpeg_hight)
 {
     HAL_LTDC_SetWindowSize (&hltdc, 1024, 600, 0);
     HAL_LTDC_SetWindowPosition (&hltdc, 0, 0, 0);
-
-    int32_t t = 0;
-
-    for (t = 0; t < 1024 * 600; t++)
-    {
-	aMemory0[t] = 0x0000; //RED
-    }
+    line_counter = 0;
 
     if (f_open (&SDFile, jpeg_name, FA_READ) == FR_OK)
     {
+
 	jpeg_decode (&SDFile, jpeg_width, _aucLine, Jpeg_CallbackFunction);
 	f_close (&SDFile);
 
@@ -507,7 +498,14 @@ int main (void)
 //	play_video (video_badApple_800x600, 800, 600);		//8FPS
 //	play_video (video_landscape_1024x600, 1024, 600);	//6.2FPS
 //	video_Array (video_badApple_240x180);
-	show_jpeg (jpeg_1024x600, 1024, 600);
+
+	while (1)
+	{
+	    show_jpeg (jpeg_color_bar, 1024, 600);
+	    HAL_Delay (1000);
+	    show_jpeg (jpeg_name, 1024, 600);
+	    HAL_Delay (1000);
+	}
 
     }
     /* USER CODE END 2 */
